@@ -1,25 +1,35 @@
 ---
+// Kita biarkan props ini ada untuk data awal (biar gak error pas build)
 const { nama, harga, stok } = Astro.props;
-const isHabis = Number(stok) <= 0;
 ---
 <div class="bg-white p-4 rounded-[2.5rem] shadow-sm border-2 transition-all relative overflow-hidden"
-  :class={`keranjang['${nama}'] > 0 ? 'border-red-500 bg-red-50/50' : 'border-slate-50'`}>
+    :class={`keranjang['${nama}'] > 0 ? 'border-red-500 bg-red-50/50' : 'border-slate-50'`}>
     
-    {isHabis && (
-        <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
-            <span class="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full rotate-[-10deg] shadow-lg uppercase">Stok Habis</span>
-        </div>
-    )}
+    <div x-show="Number(p['Stok']) <= 0" class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex items-center justify-center">
+        <span class="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full rotate-[-10deg] shadow-lg uppercase">Stok Habis</span>
+    </div>
 
     <div class="mb-3">
-        <h3 class="text-[11px] font-bold text-slate-700 uppercase tracking-tighter h-8" x-text={`'${nama}'`}></h3>
-        <p class="text-red-600 font-black text-sm">Rp {Number(harga).toLocaleString('id-ID')}</p>
-        <p class="text-[9px] text-slate-400 font-bold  mt-1">Tersedia: {stok} unit</p>
+        <h3 class="text-[11px] font-bold text-slate-700 uppercase tracking-tighter h-8" x-text="p['Nama Product']"></h3>
+        <p class="text-red-600 font-black text-sm" x-text="'Rp ' + Number(p['Harga']).toLocaleString('id-ID')"></p>
+        <p class="text-[9px] text-slate-400 font-bold mt-1 italic">
+            Tersedia: <span x-text="p['Stok']"></span> unit
+        </p>
     </div>
 
     <div class="flex items-center justify-between bg-white border border-slate-100 p-1 rounded-2xl relative z-20">
-        <button @click={`kurang('${nama}')`} disabled={isHabis} class="bg-slate-50 w-9 h-9 rounded-xl font-black text-slate-400 disabled:opacity-30">-</button>
-        <span class="font-black text-sm text-slate-800" x-text={`keranjang['${nama}'] || 0`}></span>
-        <button @click={`tambah('${nama}')`} disabled={isHabis} class="bg-red-600 w-9 h-9 rounded-xl font-black text-white shadow-md disabled:bg-slate-300">+</button>
+        <button 
+            @click="kurang(p['Nama Product'])" 
+            :disabled="Number(p['Stok']) <= 0" 
+            class="bg-slate-50 w-9 h-9 rounded-xl font-black text-slate-400 disabled:opacity-30"
+        >-</button>
+        
+        <span class="font-black text-sm text-slate-800" x-text="keranjang[p['Nama Product']] || 0"></span>
+        
+        <button 
+            @click="tambah(p['Nama Product'])" 
+            :disabled="Number(p['Stok']) <= 0" 
+            class="bg-red-600 w-9 h-9 rounded-xl font-black text-white shadow-md disabled:bg-slate-300"
+        >+</button>
     </div>
 </div>

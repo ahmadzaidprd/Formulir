@@ -3,10 +3,11 @@ import Layout from '../layouts/Layout.astro';
 import Card from '../components/Card.astro';
 
 const URL = 'https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec';
-let produk = [];
+
+let produkAwal = [];
 try {
     const res = await fetch(URL);
-    produk = await res.json();
+    produkAwal = await res.json();
 } catch (e) {
     console.error(e);
 }
@@ -21,8 +22,16 @@ try {
         statusPengiriman: 'Ambil Sendiri',
         metodeBayar: 'Tunai',
         showModal: false,
-        produk: ${JSON.stringify(produk)},
+        produk: ${JSON.stringify(produkAwal)},
         keranjang: {},
+        
+        // FUNGSI BIAR STOK OTOMATIS BERUBAH TANPA DEPLOY ULANG
+        async ambilDataTerbaru() {
+            try {
+                const res = await fetch('${URL}');
+                this.produk = await res.json();
+            } catch (e) { console.log("Gagal update data"); }
+        },
         
         tambah(id) { this.keranjang[id] = (this.keranjang[id] || 0) + 1 },
         kurang(id) { if(this.keranjang[id] > 0) this.keranjang[id]-- },
@@ -78,7 +87,7 @@ try {
             window.open('https://wa.me/6281274203815?text=' + encodeURIComponent(t));
             this.showModal = false;
         }
-    }`}>
+    }`} x-init="ambilDataTerbaru()">
         
         <header class="bg-red-600 text-white p-5 sticky top-0 z-50 shadow-md border-b-4 border-red-800 text-center">
             <h1 class="text-lg font-black tracking-tight uppercase">Formulir Pemesanan Sembako</h1>
@@ -120,9 +129,13 @@ try {
             </section>
             
             <div class="grid grid-cols-2 gap-4">
-                {produk.map((p) => (
-                    <Card nama={p['Nama Product']} harga={p['Harga']} stok={p['Stok']} />
-                ))}
+                <template x-for="p in produk" :key="p['Nama Product']">
+                    <Card 
+                        :nama="p['Nama Product']" 
+                        :harga="p['Harga']" 
+                        :stok="p['Stok']" 
+                    />
+                </template>
             </div>
         </main>
 
