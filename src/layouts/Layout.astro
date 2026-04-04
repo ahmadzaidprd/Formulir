@@ -1,23 +1,31 @@
+---
+import '../styles/global.css';
+---
 <!doctype html>
-<html lang="en">
+<html lang="id">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		
+		<link rel="icon" href="data:;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
+		
+		<script is:inline>
+			let docTitle = "Formulir Pemesanan Sembako — ";
+			setInterval(() => {
+				docTitle = docTitle.substring(1) + docTitle.substring(0, 1);
+				document.title = docTitle;
+			}, 300); // Kecepatan jalan (300ms), makin kecil makin ngebut
+		</script>
+		
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+		<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+		
+		<style is:global>
+			body { font-family: 'Plus Jakarta Sans', sans-serif; }
+		</style>
 	</head>
-	<body>
+	<body class="bg-slate-50">
 		<slot />
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
