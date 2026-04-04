@@ -25,7 +25,6 @@ try {
         produk: ${JSON.stringify(produkAwal)},
         keranjang: {},
         
-        // FUNGSI BIAR STOK OTOMATIS BERUBAH TANPA DEPLOY ULANG
         async ambilDataTerbaru() {
             try {
                 const res = await fetch('${URL}');
@@ -54,8 +53,31 @@ try {
             this.showModal = true;
         },
         
-        kirimWA() {
-            let t = 'STRUK PESANAN WARUNG ZAIDLY\\n';
+        async kirimWA() {
+            // 1. RINGKAS PESANAN UNTUK SHEET 2
+            let daftar = "";
+            this.produk.forEach(p => {
+                let qty = this.keranjang[p['Nama Product']];
+                if(qty > 0) daftar += p['Nama Product'] + " (" + qty + "), ";
+            });
+
+            // 2. KIRIM DATA KE GOOGLE SHEETS (REKAP OTOMATIS)
+            try {
+                fetch('${URL}', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({
+                        nama: this.nama,
+                        alamat: this.alamat,
+                        nowa: this.noWA,
+                        pesanan: daftar,
+                        total: this.getGrandTotal()
+                    })
+                });
+            } catch (e) { console.log("Gagal catat ke sheet"); }
+
+            // 3. FORMAT STRUK WHATSAPP (SESUAI KODE KAMU)
+            let t = 'STRUK PESANAN\\n';
             t += '-------------------------------\\n';
             t += '👤 Pelanggan: ' + this.nama + '\\n';
             t += '📍 Alamat: ' + this.alamat + '\\n';
@@ -84,7 +106,8 @@ try {
             t += '\\nPENGIRIMAN:\\n';
             t += (this.statusPengiriman === 'Ambil Sendiri' ? 'Produk silakan diambil ke tempat.\\n' : 'Produk akan diantar ke alamat Anda (Ada biaya lain-lain/ongkir).\\n');
             
-            window.open('https://wa.me/6281274203815?text=' + encodeURIComponent(t));
+            // Nomor tujuan tetap sesuai kode kamu
+            window.open('https://wa.me/6285779249428?text=' + encodeURIComponent(t));
             this.showModal = false;
         }
     }`} x-init="ambilDataTerbaru()">
