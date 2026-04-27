@@ -163,7 +163,12 @@ try {
     let daftar = "";
     this.produk.forEach(p => {
         let qty = this.keranjang[p['Nama Product']];
-        if (qty > 0) daftar += `✅ ${p['Nama Product']} (${qty}x)\n`;
+        if (qty > 0) {
+            let hargaItem = p['Harga'];
+            let sub = qty * hargaItem;
+            // Daftar produk bersih tanpa icon, cuma teks rincian
+            daftar += `• ${p['Nama Product']}\n  ${qty} x Rp ${hargaItem.toLocaleString('id-ID')} = Rp ${sub.toLocaleString('id-ID')}\n`;
+        }
     });
 
     let statusStruk = "";
@@ -171,35 +176,39 @@ try {
 
     if (this.metodeBayar === 'Transfer') {
         statusStruk = "MENUNGGU TRANSFER";
-        infoBayar = "*INFO BANK*:\nMandiri 1760006571986\na/n Koperasi Merah Putih";
+        infoBayar = "💳 *TRANSFER BANK*:\nMandiri 1760006571986\na/n Koperasi Merah Putih";
     } else if (this.metodeBayar === 'Kredit') {
         statusStruk = "MENUNGGU APPROVAL";
-        infoBayar = "*CATATAN*: Menunggu persetujuan limit kredit.";
+        infoBayar = "📝 *KREDIT*: Sedang proses approval bendahara.";
     } else {
         statusStruk = "COD / BAYAR TUNAI";
-        infoBayar = "*CATATAN*: Siapkan uang pas saat barang sampai.";
+        infoBayar = "💵 *TUNAI*: Bayar saat pengambilan/pengantaran.";
     }
 
-    // Pake Backtick (``) biar baris barunya beneran rapi pas di WA
-    let t = `*STRUK PESANAN KOPERASI*
+    // Icon cuma di bagian identitas pelanggan
+    let t = `*STRUK PESANAN KOPERASI MERAH PUTIH*
+*DESA CIKASUNGKA*
 ---------------------------------------
-👤 *Nama*: ${this.nama}
+👤 *Pelanggan*: ${this.nama}
 📍 *Alamat*: ${this.alamat}
-💳 *Metode*: ${this.metodeBayar}
+📱 *No WA*: ${this.noWA}
 🚚 *Kirim*: ${this.statusPengiriman}${this.statusPengiriman === 'Diantar ke Rumah' ? ' (GRATIS)' : ''}
-📝 *Status*: _${statusStruk}_
 ---------------------------------------
 
 *DETAIL PESANAN*:
 ${daftar}
-*TOTAL BAYAR*: *Rp ${this.getGrandTotal().toLocaleString('id-ID')}*
-
 ---------------------------------------
+*GRAND TOTAL*: *Rp ${this.getGrandTotal().toLocaleString('id-ID')}*
+---------------------------------------
+
+*INFO PEMBAYARAN*:
 ${infoBayar}
+
+*PENGIRIMAN*:
+${this.statusPengiriman === 'Diantar ke Rumah' ? '📦 Produk akan diantar ke alamat Anda.' : '🏠 Produk silakan diambil ke Koperasi.'}
 
 Terima kasih sudah berbelanja!`;
 
-    // Database Post (Tetap aman)
     try {
         fetch("https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec", {
             method: 'POST',
