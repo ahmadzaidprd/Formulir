@@ -9,49 +9,51 @@ try {
     const res = await fetch(URL);
     produkAwal = await res.json();
 } catch (e) {
-    console.error("Gagal fetch marwah asli:", e);
+    console.error("Gagal ambil data sembako:", e);
 }
-
-// Data dikirim via dataset, BUKAN via x-data string template (Penyebab Loop)
-const stringDataProduk = JSON.stringify(produkAwal);
 ---
 
-<Layout>
+<Layout title="Formulir Pesanan Koperasi">
     <div 
-        x-data="appKoperasi()" 
-        data-produk={stringDataProduk}
+        x-data="formApp()" 
+        data-produk={JSON.stringify(produkAwal)}
         class="min-h-screen bg-slate-50"
     >
-        <header class="bg-red-600 text-white p-5 sticky top-0 z-50 text-center shadow-md border-b-4 border-red-800 uppercase font-black text-sm">
-            Koperasi Merah Putih Desa Cikasungka
+        <header class="bg-red-600 text-white p-5 sticky top-0 z-50 shadow-md border-b-4 border-red-800 text-center uppercase font-black tracking-tighter">
+            <h1 class="text-sm leading-tight">Koperasi Merah Putih<br/>Desa Cikasungka</h1>
         </header>
 
         <main class="max-w-md mx-auto p-4 pb-48">
-            <section class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-red-50 mb-8 space-y-4">
-                <input type="text" x-model="nama" placeholder="Nama Lengkap" class="w-full border-b-2 py-2 outline-none font-bold text-slate-700 focus:border-red-500 transition-all">
-                <textarea x-model="alamat" placeholder="Alamat Lengkap" class="w-full border-b-2 py-2 outline-none font-bold text-slate-700 h-16 resize-none focus:border-red-500 transition-all"></textarea>
-                <input type="number" x-model="noWA" placeholder="Nomor WA (08xxx)" class="w-full border-b-2 py-2 outline-none font-bold text-slate-700 focus:border-red-500 transition-all">
+            <section class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-red-50 mb-8 space-y-5">
+                <div class="relative">
+                    <label class="text-[10px] font-black text-red-600 uppercase tracking-widest ml-1">Identitas Pembeli</label>
+                    <input type="text" x-model="nama" placeholder="Nama Lengkap" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 transition-all">
+                    <textarea x-model="alamat" placeholder="Alamat Lengkap" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 h-16 resize-none transition-all"></textarea>
+                    <input type="number" x-model="noWA" placeholder="Nomor WA (08xxx)" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 transition-all">
+                </div>
                 
-                <div class="grid grid-cols-2 gap-4 pt-2">
-                    <select x-model="metodeBayar" class="bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none ring-red-500 focus:ring-2">
-                        <option value="Tunai">Tunai (COD)</option>
-                        <option value="Transfer">Transfer Bank</option>
-                        <option value="Kredit">Kredit Anggota</option>
-                    </select>
-                    <select x-model="statusPengiriman" class="bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none ring-red-500 focus:ring-2">
-                        <option value="Ambil Sendiri">Ambil Sendiri</option>
-                        <option value="Diantar ke Rumah">Diantar</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Metode Bayar</label>
+                        <select x-model="metodeBayar" class="w-full bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="Tunai">Tunai</option>
+                            <option value="Transfer">Transfer Bank</option>
+                            <option value="Kredit">Kredit</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Pengiriman</label>
+                        <select x-model="statusPengiriman" class="w-full bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="Ambil Sendiri">Ambil Sendiri</option>
+                            <option value="Diantar ke Rumah">Diantar</option>
+                        </select>
+                    </div>
                 </div>
             </section>
             
             <div class="grid grid-cols-2 gap-4">
                 <template x-for="p in produk" :key="p['Nama Product']">
-                    <Card 
-                        :nama="p['Nama Product']" 
-                        :harga="p['Harga']" 
-                        :stok="p['Stok']" 
-                    />
+                    <Card />
                 </template>
             </div>
         </main>
@@ -59,41 +61,67 @@ const stringDataProduk = JSON.stringify(produkAwal);
         <footer class="fixed bottom-0 left-0 right-0 p-5 bg-white/95 backdrop-blur-xl border-t-2 border-red-100 z-50 flex justify-center">
              <div class="max-w-md w-full flex justify-between items-center px-2">
                 <div class="flex flex-col">
-                    <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">Total Bayar</span>
+                    <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Total Bayar</span>
                     <span class="text-2xl font-[900] text-red-600 leading-none" x-text="'Rp ' + getGrandTotal().toLocaleString('id-ID')"></span>
                 </div>
-                <button @click="validasi()" class="bg-red-600 hover:bg-red-700 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-95 transition-all tracking-widest">
+                <button @click="validasi()" class="bg-red-600 hover:bg-red-700 text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-red-200 active:scale-95 transition-all uppercase text-xs tracking-widest">
                     Cek Struk
                 </button>
             </div>
         </footer>
 
         <div x-show="showModal" x-cloak x-transition.opacity class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
-            <div @click.away="showModal = false" class="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl p-8 text-center animate-in zoom-in-95 duration-200">
-                <h2 class="font-[900] text-slate-800 text-xl mb-4 uppercase">Detail Pesanan</h2>
-                <div class="bg-slate-50 rounded-[2rem] p-6 mb-6 text-left text-xs font-bold space-y-2">
-                    <template x-for="p in produk">
-                        <div x-show="keranjang[p['Nama Product']] > 0" class="flex justify-between border-b border-dashed border-slate-200 pb-1">
-                            <span x-text="p['Nama Product']"></span>
-                            <span x-text="keranjang[p['Nama Product']] + 'x'"></span>
+            <div @click.away="showModal = false" class="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+                <div class="p-8 text-center">
+                    <h2 class="font-[900] text-slate-800 text-xl mb-4 uppercase tracking-tighter">Detail Pesanan</h2>
+                    
+                    <div class="bg-slate-50 rounded-[2rem] p-6 mb-6 text-left space-y-3 border border-slate-100">
+                        <div class="grid grid-cols-2 gap-2 pb-3 border-b border-dashed border-slate-300">
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase">Pembayaran</p>
+                                <p class="font-black text-red-600 text-[11px]" x-text="metodeBayar"></p>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-bold text-slate-400 uppercase">Pengiriman</p>
+                                <p class="font-black text-slate-700 text-[11px]" x-text="statusPengiriman"></p>
+                            </div>
                         </div>
-                    </template>
-                    <div class="pt-2 mt-2 flex justify-between text-red-600 font-black text-lg">
-                        <span>Total</span>
-                        <span x-text="'Rp ' + getGrandTotal().toLocaleString('id-ID')"></span>
+
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            <template x-for="p in produk">
+                                <div x-show="keranjang[p['Nama Product']] > 0" class="flex justify-between text-[11px] font-bold text-slate-700">
+                                    <span x-text="p['Nama Product']"></span>
+                                    <span x-text="keranjang[p['Nama Product']] + 'x'"></span>
+                                </div>
+                            </template>
+                        </div>
+                        
+                        <div class="border-t border-dashed border-slate-300 pt-3">
+                            <template x-if="statusPengiriman === 'Diantar ke Rumah'">
+                                <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                    <span>Ongkos Kirim</span>
+                                    <span class="text-green-600 uppercase font-black tracking-tighter">Gratis</span>
+                                </div>
+                            </template>
+                            
+                            <p class="flex justify-between font-black text-slate-800 text-lg leading-none">
+                                <span>Total</span>
+                                <span x-text="'Rp ' + getGrandTotal().toLocaleString('id-ID')"></span>
+                            </p>
+                        </div>
                     </div>
-                    <p class="text-[9px] text-green-600 text-center font-black mt-2 uppercase tracking-tighter">Gratis Biaya Ongkir Cikasungka</p>
+
+                    <button @click="kirimWA()" class="w-full py-5 font-black text-white bg-green-600 rounded-[1.5rem] uppercase text-xs tracking-widest mb-2 shadow-lg shadow-green-200 active:scale-95 transition-all">
+                        Kirim ke WhatsApp
+                    </button>
+                    <button @click="showModal = false" class="text-[10px] font-bold text-slate-400 uppercase cursor-pointer tracking-widest">Batal</button>
                 </div>
-                <button @click="kirimWA()" class="w-full py-5 font-black text-white bg-green-600 hover:bg-green-700 rounded-[1.5rem] uppercase text-xs tracking-widest mb-2 shadow-lg shadow-green-200 active:scale-95 transition-all">
-                    Kirim ke WhatsApp
-                </button>
-                <button @click="showModal = false" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">Batal</button>
             </div>
         </div>
     </div>
 
     <script is:inline>
-        function appKoperasi() {
+        function formApp() {
             return {
                 nama: '',
                 alamat: '',
@@ -105,70 +133,82 @@ const stringDataProduk = JSON.stringify(produkAwal);
                 keranjang: {},
 
                 init() {
-                    // Ambil data satu kali pas init, GAK bakal loop!
                     try {
                         this.produk = JSON.parse(this.$el.dataset.produk);
                     } catch (e) {
-                        console.error("Gagal parse produk");
+                        console.error("Gagal parsing data produk.");
                     }
                 },
 
                 tambah(id) { this.keranjang[id] = (this.keranjang[id] || 0) + 1 },
                 kurang(id) { if(this.keranjang[id] > 0) this.keranjang[id]-- },
-
+                
                 getSubtotal() {
                     return this.produk.reduce((t, p) => t + ((this.keranjang[p['Nama Product']] || 0) * p['Harga']), 0);
                 },
 
-                getGrandTotal() {
-                    return this.getSubtotal(); // Ongkir gratis
+                getBiayaKirim() { return 0; }, 
+                
+                getGrandTotal() { 
+                    return this.getSubtotal() + this.getBiayaKirim(); 
                 },
 
                 validasi() {
                     if(!this.nama || !this.alamat) return alert('Nama dan Alamat wajib diisi!');
-                    if(this.getSubtotal() === 0) return alert('Pilih sembako dulu, Zaid!');
+                    if(this.getSubtotal() === 0) return alert('Pilih barang belanjaan dulu!');
                     this.showModal = true;
                 },
-
+                
                 async kirimWA() {
                     let daftar = "";
                     this.produk.forEach(p => {
                         let qty = this.keranjang[p['Nama Product']];
-                        if(qty > 0) daftar += p['Nama Product'] + " (" + qty + "), ";
+                        if(qty > 0) daftar += "- " + p['Nama Product'] + " (" + qty + "x)\\n";
                     });
 
-                    let statusStruk = (this.metodeBayar === 'Transfer') ? "MENUNGGU BUKTI TRANSFER" : 
-                                      (this.metodeBayar === 'Kredit') ? "MENUNGGU APPROVAL" : "COD / BAYAR DI TEMPAT";
+                    let statusStruk = "";
+                    let infoBayar = "";
 
-                    let infoTambahan = (this.metodeBayar === 'Transfer') ? "Silakan transfer ke Rek. *Mandiri 1760006571986* a/n Koperasi Merah Putih." : 
-                                      (this.metodeBayar === 'Kredit') ? "Pesanan akan dicek limit kredit anggota oleh pengurus." : "Siapkan uang pas ya.";
+                    if (this.metodeBayar === 'Transfer') {
+                        statusStruk = "MENUNGGU TRANSFER";
+                        infoBayar = "*INFO BANK*: Mandiri 1760006571986 a/n Koperasi Merah Putih.";
+                    } else if (this.metodeBayar === 'Kredit') {
+                        statusStruk = "MENUNGGU APPROVAL";
+                        infoBayar = "*CATATAN*: Pesanan akan dicek limit kreditnya oleh pengurus koperasi.";
+                    } else {
+                        statusStruk = "COD / BAYAR TUNAI";
+                        infoBayar = "*CATATAN*: Mohon siapkan uang pas saat barang diterima.";
+                    }
 
-                    // Database (POST)
+                    let t = 'STRUK PESANAN KOPERASI MERAH PUTIH\\n';
+                    t += '-------------------------------\\n';
+                    t += '👤 Nama: ' + this.nama + '\\n';
+                    t += '📍 Alamat: ' + this.alamat + '\\n';
+                    t += '💳 Metode: *' + this.metodeBayar + '*\\n';
+                    t += '🚚 Kirim: ' + this.statusPengiriman;
+                    
+                    // Tulisan gratis di WA cuma muncul kalo diantar
+                    if(this.statusPengiriman === 'Diantar ke Rumah') t += ' (GRATIS)\\n';
+                    else t += '\\n';
+
+                    t += '📝 Status: *' + statusStruk + '*\\n';
+                    t += '-------------------------------\\n\\n';
+                    t += 'DETAIL PESANAN:\\n' + daftar + '\\n';
+                    t += 'TOTAL BAYAR: *Rp ' + this.getGrandTotal().toLocaleString('id-ID') + '*\\n';
+                    t += '-------------------------------\\n\\n';
+                    t += infoBayar + '\\n\\n';
+                    t += 'Terima kasih!';
+
                     try {
-                        fetch('https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec', {
+                        fetch("https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec", {
                             method: 'POST',
                             mode: 'no-cors',
                             body: JSON.stringify({
-                                nama: this.nama,
-                                alamat: this.alamat,
-                                nowa: this.noWA,
-                                pesanan: daftar,
-                                total: this.getGrandTotal(),
-                                metode: this.metodeBayar
+                                nama: this.nama, alamat: this.alamat, nowa: this.noWA,
+                                pesanan: daftar, total: this.getGrandTotal(), metode: this.metodeBayar
                             })
                         });
-                    } catch (e) { console.log("Database skip"); }
-
-                    let t = 'STRUK KOPERASI MERAH PUTIH\\n' +
-                            '-------------------------------\\n' +
-                            '👤: ' + this.nama + '\\n📍: ' + this.alamat + '\\n' +
-                            '💳: *' + this.metodeBayar + '*\\n📝: *' + statusStruk + '*\\n' +
-                            '🚚: ' + this.statusPengiriman + ' (Gratis)\\n' +
-                            '-------------------------------\\n' +
-                            'BARANG: ' + daftar + '\\n' +
-                            'TOTAL: Rp ' + this.getGrandTotal().toLocaleString('id-ID') + '\\n' +
-                            '-------------------------------\\n' +
-                            infoTambahan;
+                    } catch (e) { console.log("Gagal catat database"); }
 
                     window.open('https://wa.me/6281217476659?text=' + encodeURIComponent(t));
                     this.showModal = false;
