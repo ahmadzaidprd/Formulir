@@ -4,26 +4,28 @@ import Card from '../components/Card.astro';
 
 const URL = 'https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec';
 
-// INI YANG BIKIN ASTRO NUNGGU RESPON GOOGLE DULU SEBELUM TAMPIL
 let produkAwal = [];
 try {
     const res = await fetch(URL);
     produkAwal = await res.json();
 } catch (e) {
-    console.error("Gagal ambil data awal:", e);
+    console.error("Gagal fetch:", e);
 }
+
+// Data dibungkus rapi biar Cloudflare aman
+const produkJson = JSON.stringify(produkAwal).replace(/</g, '\\u003c');
 ---
 
 <Layout>
     <div x-data={`{
-        nama: '',
-        alamat: '',
+        nama: '', 
+        alamat: '', 
         noWA: '',
         statusAnggota: 'Non Anggota',
         statusPengiriman: 'Ambil Sendiri',
         metodeBayar: 'Tunai',
         showModal: false,
-        produk: ${JSON.stringify(produkAwal)},
+        produk: ${produkJson},
         keranjang: {},
         
         async ambilDataTerbaru() {
@@ -40,8 +42,14 @@ try {
             return this.produk.reduce((t, p) => t + ((this.keranjang[p['Nama Product']] || 0) * p['Harga']), 0);
         },
         
-        getBiayaKirim() { return 0; },
-        getGrandTotal() { return this.getSubtotal(); },
+        getBiayaKirim() {
+            // Logika ongkir lo: kalau diantar ke rumah dan ada belanjaan
+            return (this.statusPengiriman === 'Diantar ke Rumah' && this.getSubtotal() > 0) ? 0 : 0; 
+        },
+        
+        getGrandTotal() {
+            return this.getSubtotal() + this.getBiayaKirim();
+        },
 
         validasi() {
             if(!this.nama || !this.alamat) return alert('Nama dan Alamat wajib diisi!');
@@ -162,7 +170,7 @@ try {
         <div x-show="showModal" x-transition.opacity class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" x-cloak>
             <div @click.away="showModal = false" class="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
                 <div class="p-8 text-center">
-                    <h2 class="font-[900] text-slate-800 text-xl mb-4 uppercase">Detail Pesanan</h2>
+                    <h2 class="font-[900] text-slate-800 text-xl mb-4 uppercase text-center">Detail Pesanan</h2>
                     <div class="bg-slate-50 rounded-[2rem] p-6 mb-6 text-left">
                         <div class="mb-4 pb-2 border-b border-dashed border-slate-300 text-center">
                             <p class="text-[10px] font-bold text-slate-400 uppercase">Metode Pembayaran</p>
@@ -186,9 +194,7 @@ try {
                             <p class="text-[10px] text-green-600 font-bold mt-1 text-center">*Gratis Biaya Ongkir</p>
                         </div>
                     </div>
-                    <button @click="kirimWA()" class="w-full py-5 font-black text-white bg-green-600 rounded-[1.5rem] uppercase text-xs tracking-widest mb-2 shadow-lg shadow-green-200 active:scale-95 transition-all">
-                        Kirim ke WA
-                    </button>
+                    <button @click="kirimWA()" class="w-full py-5 font-black text-white bg-green-600 rounded-[1.5rem] uppercase text-xs tracking-widest mb-2 shadow-lg shadow-green-200 active:scale-95 transition-all">Kirim ke WA</button>
                     <button @click="showModal = false" class="text-[10px] font-bold text-slate-400 uppercase cursor-pointer">Batal</button>
                 </div>
             </div>
