@@ -4,12 +4,13 @@ import Card from '../components/Card.astro';
 
 const URL = 'https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec';
 
+// INI YANG BIKIN ASTRO NUNGGU RESPON GOOGLE DULU SEBELUM TAMPIL
 let produkAwal = [];
 try {
     const res = await fetch(URL);
     produkAwal = await res.json();
 } catch (e) {
-    console.error(e);
+    console.error("Gagal ambil data awal:", e);
 }
 ---
 
@@ -20,7 +21,7 @@ try {
         noWA: '',
         statusAnggota: 'Non Anggota',
         statusPengiriman: 'Ambil Sendiri',
-        metodeBayar: 'Tunai', // Default Tunai
+        metodeBayar: 'Tunai',
         showModal: false,
         produk: ${JSON.stringify(produkAwal)},
         keranjang: {},
@@ -39,13 +40,8 @@ try {
             return this.produk.reduce((t, p) => t + ((this.keranjang[p['Nama Product']] || 0) * p['Harga']), 0);
         },
         
-        getBiayaKirim() {
-            return this.statusPengiriman === 'Diantar ke Rumah' ? 10000 : 0;
-        },
-        
-        getGrandTotal() {
-            return this.getSubtotal() + this.getBiayaKirim();
-        },
+        getBiayaKirim() { return 0; },
+        getGrandTotal() { return this.getSubtotal(); },
 
         validasi() {
             if(!this.nama || !this.alamat) return alert('Nama dan Alamat wajib diisi!');
@@ -54,14 +50,26 @@ try {
         },
         
         async kirimWA() {
-            // 1. RINGKAS PESANAN UNTUK SHEET 2
             let daftar = "";
             this.produk.forEach(p => {
                 let qty = this.keranjang[p['Nama Product']];
                 if(qty > 0) daftar += p['Nama Product'] + " (" + qty + "), ";
             });
 
-            // 2. KIRIM DATA KE GOOGLE SHEETS
+            let statusStruk = "";
+            let infoTambahan = "";
+
+            if (this.metodeBayar === 'Tunai') {
+                statusStruk = "COD / BAYAR DI TEMPAT";
+                infoTambahan = "Silakan siapkan uang pas saat pengambilan/pengantaran barang.";
+            } else if (this.metodeBayar === 'Transfer') {
+                statusStruk = "MENUNGGU BUKTI TRANSFER";
+                infoTambahan = "Silakan transfer ke Rek. *Mandiri 1760006571986* a/n Koperasi Merah Putih. Mohon lampirkan foto bukti transfer setelah ini.";
+            } else if (this.metodeBayar === 'Kredit') {
+                statusStruk = "MENUNGGU APPROVAL";
+                infoTambahan = "Pesanan akan dicek oleh pengurus Koperasi untuk persetujuan limit kredit anggota.";
+            }
+
             try {
                 fetch('${URL}', {
                     method: 'POST',
@@ -71,43 +79,27 @@ try {
                         alamat: this.alamat,
                         nowa: this.noWA,
                         pesanan: daftar,
-                        total: this.getGrandTotal()
+                        total: this.getGrandTotal(),
+                        metode: this.metodeBayar
                     })
                 });
-            } catch (e) { console.log("Gagal catat ke sheet"); }
+            } catch (e) { console.log("Gagal catat"); }
 
-            // 3. FORMAT STRUK WHATSAPP (UPDATE IDENTITAS & TUNAI ONLY)
             let t = 'STRUK PESANAN KOPERASI MERAH PUTIH\\n';
             t += 'DESA CIKASUNGKA\\n';
             t += '-------------------------------\\n';
             t += '👤 Pelanggan: ' + this.nama + '\\n';
             t += '📍 Alamat: ' + this.alamat + '\\n';
-            t += '📱 No WA: ' + this.noWA + '\\n';
-            t += '🎖️ Status: ' + this.statusAnggota + '\\n';
+            t += '💳 Metode: *' + this.metodeBayar + '*\\n';
+            t += '📝 Status: *' + statusStruk + '*\\n';
+            t += '🚚 Kirim: ' + this.statusPengiriman + ' (Gratis)\\n';
             t += '-------------------------------\\n\\n';
-            t += 'DETAIL PESANAN:\\n';
-            
-            this.produk.forEach(p => {
-                let qty = this.keranjang[p['Nama Product']];
-                if(qty > 0) {
-                    t += '* ' + p['Nama Product'] + '\\n';
-                    t += '  ' + qty + ' x Rp' + p['Harga'].toLocaleString('id-ID') + ' = Rp' + (qty * p['Harga']).toLocaleString('id-ID') + '\\n';
-                }
-            });
-            
-            t += '\\n-------------------------------\\n';
-            t += 'Subtotal: Rp ' + this.getSubtotal().toLocaleString('id-ID') + '\\n';
-            t += 'Ongkir: Rp ' + this.getBiayaKirim().toLocaleString('id-ID') + '\\n';
-            t += 'GRAND TOTAL: Rp ' + this.getGrandTotal().toLocaleString('id-ID') + '\\n';
+            t += 'DETAIL PESANAN:\\n' + daftar + '\\n\\n';
+            t += 'TOTAL BAYAR: Rp ' + this.getGrandTotal().toLocaleString('id-ID') + '\\n';
             t += '-------------------------------\\n\\n';
-            
-            t += 'INFO PEMBAYARAN:\\n';
-            t += 'Pembayaran Tunai saat pengambilan/pengantaran.\\n';
-            
-            t += '\\nPENGIRIMAN:\\n';
-            t += (this.statusPengiriman === 'Ambil Sendiri' ? 'Produk silakan diambil ke Koperasi.\\n' : 'Produk akan diantar ke alamat Anda.\\n');
-            
-            window.open('https://wa.me/6285779249428?text=' + encodeURIComponent(t));
+            t += '*INFO PEMBAYARAN*:\\n' + infoTambahan;
+
+            window.open('https://wa.me/6281217476659?text=' + encodeURIComponent(t));
             this.showModal = false;
         }
     }`} x-init="ambilDataTerbaru()">
@@ -121,32 +113,26 @@ try {
                 <div class="relative">
                     <label class="text-[10px] font-black text-red-600 uppercase tracking-widest ml-1">Identitas Pembeli</label>
                     <input type="text" x-model="nama" placeholder="Nama Lengkap" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 transition-all">
-                    <textarea x-model="alamat" placeholder="Alamat Lengkap (Jl, No Rumah, RT/RW)" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 h-16 resize-none transition-all"></textarea>
+                    <textarea x-model="alamat" placeholder="Alamat Lengkap" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 h-16 resize-none transition-all"></textarea>
                     <input type="number" x-model="noWA" placeholder="Nomor WA (08xxx)" class="w-full border-b-2 border-slate-100 py-3 outline-none focus:border-red-500 font-bold text-slate-700 transition-all">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
-                        <select x-model="statusAnggota" class="w-full bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-500">
-                            <option>Non Anggota</option>
-                            <option>Anggota</option>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Metode Bayar</label>
+                        <select x-model="metodeBayar" class="w-full bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="Tunai">Tunai</option>
+                            <option value="Transfer">Transfer Bank</option>
+                            <option value="Kredit">Kredit</option>
                         </select>
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Pembayaran</label>
-                        <div class="w-full bg-slate-200 p-3 rounded-2xl text-xs font-black text-slate-500 text-center tracking-tighter">
-                            Tunai
-                        </div>
+                        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Pengiriman</label>
+                        <select x-model="statusPengiriman" class="w-full bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-500">
+                            <option value="Ambil Sendiri">Ambil Sendiri</option>
+                            <option value="Diantar ke Rumah">Diantar</option>
+                        </select>
                     </div>
-                </div>
-
-                <div class="space-y-1">
-                    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Opsi Pengiriman</label>
-                    <select x-model="statusPengiriman" class="w-full bg-slate-100 p-3 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-red-500">
-                        <option>Ambil Sendiri</option>
-                        <option>Diantar ke Rumah</option>
-                    </select>
                 </div>
             </section>
             
@@ -173,43 +159,37 @@ try {
             </div>
         </footer>
 
-        <div x-show="showModal" x-transition.opacity class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+        <div x-show="showModal" x-transition.opacity class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm" x-cloak>
             <div @click.away="showModal = false" class="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-                <div class="p-8">
-                    <h2 class="text-center font-[900] text-slate-800 text-xl mb-6 uppercase tracking-tight leading-tight">Detail Pesanan<br/><span class="text-[10px] text-red-500">Koperasi Merah Putih</span></h2>
-                    
-                    <div class="bg-slate-50 rounded-[2rem] p-6 mb-6 max-h-72 overflow-y-auto border border-slate-100">
-                        <p class="font-black text-red-600 border-b-2 border-dashed border-slate-200 pb-3 mb-4 text-center" x-text="nama"></p>
-                        <template x-for="p in produk">
-                            <div x-show="keranjang[p['Nama Product']] > 0" class="flex flex-col py-2 border-b border-slate-100 last:border-0">
-                                <span class="font-bold text-slate-800 text-sm" x-text="p['Nama Product']"></span>
-                                <div class="flex justify-between text-xs text-slate-500">
-                                    <span x-text="keranjang[p['Nama Product']] + ' x Rp' + p['Harga'].toLocaleString('id-ID')"></span>
-                                    <span class="font-black text-slate-700" x-text="'Rp ' + (keranjang[p['Nama Product']] * p['Harga']).toLocaleString('id-ID')"></span>
+                <div class="p-8 text-center">
+                    <h2 class="font-[900] text-slate-800 text-xl mb-4 uppercase">Detail Pesanan</h2>
+                    <div class="bg-slate-50 rounded-[2rem] p-6 mb-6 text-left">
+                        <div class="mb-4 pb-2 border-b border-dashed border-slate-300 text-center">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Metode Pembayaran</p>
+                            <p class="font-black text-red-600" x-text="metodeBayar"></p>
+                        </div>
+
+                        <div class="space-y-2 mb-4">
+                            <template x-for="p in produk">
+                                <div x-show="keranjang[p['Nama Product']] > 0" class="flex justify-between text-xs font-bold text-slate-700">
+                                    <span x-text="p['Nama Product']"></span>
+                                    <span x-text="keranjang[p['Nama Product']] + 'x'"></span>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
                         
-                        <div class="mt-4 pt-3 space-y-1 text-xs">
-                            <div class="flex justify-between text-slate-400 font-bold">
-                                <span>SUBTOTAL</span>
-                                <span x-text="'Rp ' + getSubtotal().toLocaleString('id-ID')"></span>
-                            </div>
-                            <div class="flex justify-between text-slate-400 font-bold" x-show="getBiayaKirim() > 0">
-                                <span>ONGKIR</span>
-                                <span x-text="'Rp ' + getBiayaKirim().toLocaleString('id-ID')"></span>
-                            </div>
-                            <div class="flex justify-between font-black text-red-600 text-lg pt-2">
-                                <span>TOTAL</span>
+                        <div class="border-t border-dashed border-slate-300 pt-4">
+                            <p class="flex justify-between font-black text-slate-800 text-lg">
+                                <span>Total</span>
                                 <span x-text="'Rp ' + getGrandTotal().toLocaleString('id-ID')"></span>
-                            </div>
+                            </p>
+                            <p class="text-[10px] text-green-600 font-bold mt-1 text-center">*Gratis Biaya Ongkir</p>
                         </div>
                     </div>
-
-                    <div class="flex flex-col gap-3">
-                        <button @click="kirimWA()" class="w-full py-5 font-black text-white bg-green-600 rounded-[1.5rem] shadow-xl shadow-green-100 uppercase text-xs tracking-widest">Pesan Sekarang</button>
-                        <button @click="showModal = false" class="w-full py-3 font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase text-[10px] tracking-widest">Batal / Edit</button>
-                    </div>
+                    <button @click="kirimWA()" class="w-full py-5 font-black text-white bg-green-600 rounded-[1.5rem] uppercase text-xs tracking-widest mb-2 shadow-lg shadow-green-200 active:scale-95 transition-all">
+                        Kirim ke WA
+                    </button>
+                    <button @click="showModal = false" class="text-[10px] font-bold text-slate-400 uppercase cursor-pointer">Batal</button>
                 </div>
             </div>
         </div>
