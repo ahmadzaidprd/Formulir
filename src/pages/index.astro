@@ -160,59 +160,60 @@ try {
                 },
                 
                 async kirimWA() {
-                    let daftar = "";
-                    this.produk.forEach(p => {
-                        let qty = this.keranjang[p['Nama Product']];
-                        if(qty > 0) daftar += "- " + p['Nama Product'] + " (" + qty + "x)\\n";
-                    });
+    let daftar = "";
+    this.produk.forEach(p => {
+        let qty = this.keranjang[p['Nama Product']];
+        if (qty > 0) daftar += `✅ ${p['Nama Product']} (${qty}x)\n`;
+    });
 
-                    let statusStruk = "";
-                    let infoBayar = "";
+    let statusStruk = "";
+    let infoBayar = "";
 
-                    if (this.metodeBayar === 'Transfer') {
-                        statusStruk = "MENUNGGU TRANSFER";
-                        infoBayar = "*INFO BANK*: Mandiri 1760006571986 a/n Koperasi Merah Putih.";
-                    } else if (this.metodeBayar === 'Kredit') {
-                        statusStruk = "MENUNGGU APPROVAL";
-                        infoBayar = "*CATATAN*: Pesanan akan dicek limit kreditnya oleh pengurus koperasi.";
-                    } else {
-                        statusStruk = "COD / BAYAR TUNAI";
-                        infoBayar = "*CATATAN*: Mohon siapkan uang pas saat barang diterima.";
-                    }
+    if (this.metodeBayar === 'Transfer') {
+        statusStruk = "MENUNGGU TRANSFER";
+        infoBayar = "*INFO BANK*:\nMandiri 1760006571986\na/n Koperasi Merah Putih";
+    } else if (this.metodeBayar === 'Kredit') {
+        statusStruk = "MENUNGGU APPROVAL";
+        infoBayar = "*CATATAN*: Menunggu persetujuan limit kredit.";
+    } else {
+        statusStruk = "COD / BAYAR TUNAI";
+        infoBayar = "*CATATAN*: Siapkan uang pas saat barang sampai.";
+    }
 
-                    let t = 'STRUK PESANAN KOPERASI MERAH PUTIH\\n';
-                    t += '-------------------------------\\n';
-                    t += '👤 Nama: ' + this.nama + '\\n';
-                    t += '📍 Alamat: ' + this.alamat + '\\n';
-                    t += '💳 Metode: *' + this.metodeBayar + '*\\n';
-                    t += '🚚 Kirim: ' + this.statusPengiriman;
-                    
-                    // Tulisan gratis di WA cuma muncul kalo diantar
-                    if(this.statusPengiriman === 'Diantar ke Rumah') t += ' (GRATIS)\\n';
-                    else t += '\\n';
+    // Pake Backtick (``) biar baris barunya beneran rapi pas di WA
+    let t = `*STRUK PESANAN KOPERASI*
+---------------------------------------
+👤 *Nama*: ${this.nama}
+📍 *Alamat*: ${this.alamat}
+💳 *Metode*: ${this.metodeBayar}
+🚚 *Kirim*: ${this.statusPengiriman}${this.statusPengiriman === 'Diantar ke Rumah' ? ' (GRATIS)' : ''}
+📝 *Status*: _${statusStruk}_
+---------------------------------------
 
-                    t += '📝 Status: *' + statusStruk + '*\\n';
-                    t += '-------------------------------\\n\\n';
-                    t += 'DETAIL PESANAN:\\n' + daftar + '\\n';
-                    t += 'TOTAL BAYAR: *Rp ' + this.getGrandTotal().toLocaleString('id-ID') + '*\\n';
-                    t += '-------------------------------\\n\\n';
-                    t += infoBayar + '\\n\\n';
-                    t += 'Terima kasih!';
+*DETAIL PESANAN*:
+${daftar}
+*TOTAL BAYAR*: *Rp ${this.getGrandTotal().toLocaleString('id-ID')}*
 
-                    try {
-                        fetch("https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec", {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            body: JSON.stringify({
-                                nama: this.nama, alamat: this.alamat, nowa: this.noWA,
-                                pesanan: daftar, total: this.getGrandTotal(), metode: this.metodeBayar
-                            })
-                        });
-                    } catch (e) { console.log("Gagal catat database"); }
+---------------------------------------
+${infoBayar}
 
-                    window.open('https://wa.me/6281217476659?text=' + encodeURIComponent(t));
-                    this.showModal = false;
-                }
+Terima kasih sudah berbelanja!`;
+
+    // Database Post (Tetap aman)
+    try {
+        fetch("https://script.google.com/macros/s/AKfycbxhzQklS_GeOwBXHoHTnqgeTqNEtwZrkriSRqG4Cg5PQpAeXcj3-oOELwQ0vDHguk7W/exec", {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({
+                nama: this.nama, alamat: this.alamat, nowa: this.noWA,
+                pesanan: daftar, total: this.getGrandTotal(), metode: this.metodeBayar
+            })
+        });
+    } catch (e) { console.log("DB Skip"); }
+
+    window.open('https://wa.me/6281217476659?text=' + encodeURIComponent(t));
+    this.showModal = false;
+}
             }
         }
     </script>
