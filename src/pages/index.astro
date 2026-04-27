@@ -166,7 +166,7 @@ try {
         if (qty > 0) {
             let hargaItem = p['Harga'];
             let sub = qty * hargaItem;
-            // Daftar produk bersih tanpa icon, cuma teks rincian
+            // Rincian produk: Titik bulet, Tanpa Icon, Ada itungan harga
             daftar += `• ${p['Nama Product']}\n  ${qty} x Rp ${hargaItem.toLocaleString('id-ID')} = Rp ${sub.toLocaleString('id-ID')}\n`;
         }
     });
@@ -179,27 +179,31 @@ try {
         infoBayar = "💳 *TRANSFER BANK*:\nMandiri 1760006571986\na/n Koperasi Merah Putih";
     } else if (this.metodeBayar === 'Kredit') {
         statusStruk = "MENUNGGU APPROVAL";
-        infoBayar = "📝 *KREDIT*: Sedang proses approval bendahara.";
+        infoBayar = "📝 *KREDIT*: Sedang Proses Approval Bendahara.";
     } else {
         statusStruk = "COD / BAYAR TUNAI";
         infoBayar = "💵 *TUNAI*: Bayar saat pengambilan/pengantaran.";
     }
 
-    // Icon cuma di bagian identitas pelanggan
-    let t = `*STRUK PESANAN KOPERASI MERAH PUTIH*
+    // FORMAT PESAN WA (PAKAI BACKTICK AGAR RAPI)
+    let t = `*KOPERASI MERAH PUTIH*
 *DESA CIKASUNGKA*
----------------------------------------
+___________________________________
+
+*STRUK PESANAN RESMI*
+___________________________________
+
 👤 *Pelanggan*: ${this.nama}
 📍 *Alamat*: ${this.alamat}
 📱 *No WA*: ${this.noWA}
 🚚 *Kirim*: ${this.statusPengiriman}${this.statusPengiriman === 'Diantar ke Rumah' ? ' (GRATIS)' : ''}
----------------------------------------
+___________________________________
 
 *DETAIL PESANAN*:
 ${daftar}
----------------------------------------
+___________________________________
 *GRAND TOTAL*: *Rp ${this.getGrandTotal().toLocaleString('id-ID')}*
----------------------------------------
+___________________________________
 
 *INFO PEMBAYARAN*:
 ${infoBayar}
@@ -214,8 +218,12 @@ Terima kasih sudah berbelanja!`;
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify({
-                nama: this.nama, alamat: this.alamat, nowa: this.noWA,
-                pesanan: daftar, total: this.getGrandTotal(), metode: this.metodeBayar
+                nama: this.nama, 
+                alamat: this.alamat, 
+                nowa: this.noWA,
+                pesanan: daftar, 
+                total: this.getGrandTotal(), 
+                metode: this.metodeBayar
             })
         });
     } catch (e) { console.log("DB Skip"); }
